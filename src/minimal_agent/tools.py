@@ -86,3 +86,32 @@ class DuckDuckGoSearchTool:
             for result in results
         ]
         return "## Search Results\n\n" + "\n\n".join(postprocessed_results)
+
+class TavilySearchTool:
+    name = "tavily_search"
+    description = """Performs a Tavily web search based on your query (think a Google search) then returns the top search results."""
+    inputs = {
+        "query": {"type": "string", "description": "The search query to perform."}
+    }
+    output_type = "string"
+
+    def __init__(self, max_results=10, **kwargs):
+        super().__init__()
+        self.max_results = max_results
+        try:
+            from tavily import TavilyClient
+        except ImportError as e:
+            raise ImportError(
+                "You must install package `tavily` to run this tool: for instance run `pip install tavily`."
+            ) from e
+        self.tavily = TavilyClient(**kwargs)
+
+    def __call__(self, query: str) -> str:
+        results = self.tavily.search(query, max_results=self.max_results)["results"]
+        if len(results) == 0:
+            raise Exception("No results found! Try a less restrictive/shorter query.")
+        postprocessed_results = [
+            f"[{result["title"]}]({result["url"]})\n{result["content"]}"
+            for result in results
+        ]
+        return "## Search Results\n\n" + "\n\n".join(postprocessed_results)
